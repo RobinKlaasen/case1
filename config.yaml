@@ -1,0 +1,57 @@
+random_state: 42
+
+data:
+  raw_dir: "../data/raw"
+  processed_dir: "../data/processed"
+
+# ── Features ──────────────────────────────────────────────────────────────────
+features:
+  numeric:
+    - amount               # parsed from "$X.XX" string; negatives = reversals
+    - transaction_hour     # 0–23, engineered from date
+    - transaction_dow      # 0=Monday … 6=Sunday, engineered from date
+    - credit_score
+    - yearly_income        # parsed from "$X" string
+    - current_age
+    - credit_limit         # parsed from "$X" string
+  categorical:
+    - use_chip             # "Swipe Transaction", "Chip Transaction", "Online Transaction"
+    - mcc_category         # human-readable MCC group, joined from mcc_codes.json
+    - card_type            # debit / credit / etc. — defines "premium" segment
+    - card_brand           # Visa / Mastercard / etc.
+  top_mcc_categories: 15   # keep the 15 most frequent MCC groups; bucket the rest as "Other"
+                            # reduces ~100 one-hot dummies to ~15, keeping the matrix readable
+  binary:
+    - is_foreign_state     # merchant_state != user's inferred home state
+                           # NOTE: case text says "foreign country" but data is US-only;
+                           #       adapted to state-level
+    - has_chip
+    - card_on_dark_web     # YES/NO — think carefully about whether this would be
+                           # available, and correct, at inference time in production.
+
+  # Features excluded from modelling with reasons
+  excluded:
+    - card_number          # PII; no predictive signal beyond card_id
+    - cvv                  # PII
+    - zip                  # too sparse; merchant_state covers location at useful granularity
+    - address              # free text; not useful directly
+    - birth_year           # current_age is derived from this; avoid duplication
+    - birth_month          # low signal, not worth the noise
+    - acct_open_date       # would need feature engineering; skip for Case 1 baseline
+    - year_pin_last_changed
+
+# ── Premium cardholder definition ─────────────────────────────────────────────
+# No explicit "premium" column in the data; we define it here so it's easy to revise.
+# Is this the right definition? Document your assumption in the committee write-up.
+premium:
+  card_types: ["Credit"]
+  # The dataset has only three card types: "Debit", "Credit", "Debit (Prepaid)".
+  # There is no "Gold" or "Platinum" tier. We use Credit cardholders as the
+  # closest proxy for the "premium" segment described in the scenario.
+
+# ── Baseline rule (current manual process) ────────────────────────────────────
+# Original rule: transactions > €400 outside the customer's home country.
+# Adapted: USD threshold, home state instead of home country (data is US-only).
+baseline_rule:
+  amount_threshold: 400
+  requires_foreign_state: true
