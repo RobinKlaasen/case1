@@ -7,27 +7,27 @@ data:
 # ── Features ──────────────────────────────────────────────────────────────────
 features:
   numeric:
-    - amount               # parsed from "$X.XX" string; negatives = reversals
-    - transaction_hour     # 0–23, engineered from date
-    - transaction_dow      # 0=Monday … 6=Sunday, engineered from date
+    - amount              # parsed from "$X.XX" string; negatives = reversals
     - credit_score
-    - yearly_income        # parsed from "$X" string
+    - yearly_income       # parsed from "$X" string
+    - per_capita_income   # ADDED
+    - total_debit         # ADDED
+    - credit_score        # ADDED
+    - num_credit_cards    # ADDED
     - current_age
     - credit_limit         # parsed from "$X" string
+    - num_cards_issued  # ADDED
   categorical:
     - use_chip             # "Swipe Transaction", "Chip Transaction", "Online Transaction"
     - mcc_category         # human-readable MCC group, joined from mcc_codes.json
     - card_type            # debit / credit / etc. — defines "premium" segment
     - card_brand           # Visa / Mastercard / etc.
+    - gender              # ADDED
+    - merchant_state      # ADDED
   top_mcc_categories: 15   # keep the 15 most frequent MCC groups; bucket the rest as "Other"
                             # reduces ~100 one-hot dummies to ~15, keeping the matrix readable
   binary:
-    - is_foreign_state     # merchant_state != user's inferred home state
-                           # NOTE: case text says "foreign country" but data is US-only;
-                           #       adapted to state-level
-    - has_chip
-    - card_on_dark_web     # YES/NO — think carefully about whether this would be
-                           # available, and correct, at inference time in production.
+    - has_chip            # ADDED
 
   # Features excluded from modelling with reasons
   excluded:
@@ -39,6 +39,7 @@ features:
     - birth_month          # low signal, not worth the noise
     - acct_open_date       # would need feature engineering; skip for Case 1 baseline
     - year_pin_last_changed
+    - merchant_id          # high-cardinality ID; avoid treating it as an ordered number
 
 # ── Premium cardholder definition ─────────────────────────────────────────────
 # No explicit "premium" column in the data; we define it here so it's easy to revise.

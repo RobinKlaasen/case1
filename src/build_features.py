@@ -54,7 +54,11 @@ def build_features(df: pd.DataFrame, config: dict) -> tuple[pd.DataFrame, pd.Ser
 
     X_num = df[numeric_actual].copy()
     X_bin = df[binary_actual].astype(float)
-    X_cat = pd.get_dummies(df[categorical_actual], drop_first=True, dtype=float)
+    X_cat = pd.get_dummies(
+        df[categorical_actual].astype("string"),
+        drop_first=True,
+        dtype=float,
+    )
 
     X = pd.concat([X_num, X_bin, X_cat], axis=1)
     y = df["is_fraud"].astype(int)
